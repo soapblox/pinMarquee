@@ -1,0 +1,106 @@
+<html>
+    <head>
+        <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+        <script src="https://code.jquery.com/jquery-3.2.1.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4="
+        crossorigin="anonymous"></script>        
+        <script src="/socket.io/socket.io.js"></script>
+        <script src="marquee.js"></script>
+        <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+    </head>
+    <body>
+
+        <span style="width: 500px" id="currentPlayerDiv"></span>
+        <script>
+
+            var pinMarquee = new PinMarquee();
+            var playerTimer;
+            var playersIndex = 0;
+            var started = false;
+
+            function makePlayerMatchesString(playerMatches, currentPlayerId) {
+                var theString = ""
+                playerMatches.forEach(function(aMatch, index) {
+                    // for Player List, we always want the CURRENT Player score displayed on the LEFT
+                    // so if the CURRENT Player is actually player 2, we swap the score string...
+                    if (currentPlayerId == aMatch.player1.id) {
+                        theString += " R" + aMatch.round + ". (" +  aMatch.player1Score + "-" + aMatch.player2Score + ")";
+                        //console.log("player is player 1");
+                    }
+                    else {
+                        theString += " R" + aMatch.round + ". (" +  aMatch.player2Score + "-" + aMatch.player1Score + ")";
+                        //console.log("player is player 2");
+                    }
+                    
+                });
+
+                return theString;
+            }
+
+            function drawCurrentPlayer() {
+                var currentPlayer = "";
+
+                currentPlayer += pinMarquee.players[playersIndex].name;
+                var currentPlayerId = pinMarquee.players[playersIndex].id;
+
+                //console.log(currentPlayer);
+
+                var matchString = makePlayerMatchesString(pinMarquee.getMatchesByPlayerId(currentPlayerId), currentPlayerId);
+
+                // $("#currentPlayerDiv").html(currentPlayer + matchString);
+                playersIndex++;
+
+                // reset the loop
+                if (playersIndex == pinMarquee.players.length) {
+                    playersIndex = 0;
+                }
+
+                fadeExistingAndLoadNew(currentPlayer + matchString);
+            }
+
+
+            $(function () {
+
+                var socket = io();
+                window['taco'] = socket;
+                window['taco'].emit("startPlayerWidget", "startPlayerWidget");
+
+                socket.on("paintPlayer", function(msg) {
+                    console.log("in paintWidget");
+                    fadeExistingAndLoadNew(msg);
+                })
+
+                socket.on("playerStateUpdate", function(msg) {
+                    console.log("in playerStateUpdate");
+
+                    var tempMarquee = JSON.parse(msg);
+                    
+                    pinMarquee.players = tempMarquee.players;
+                    pinMarquee.matches = tempMarquee.matches;
+
+                    console.log(pinMarquee);
+
+                    if (!started) {
+                        started = true;
+                        playerTimer = new interval(10000, drawCurrentPlayer);
+                        playerTimer.run();
+                    }
+                })
+            });
+
+            function fadeExistingAndLoadNew(newStuff) {
+                var options = { direction: "down"};
+                $("#currentPlayerDiv").effect("drop", options, 400);
+                setTimeout(drawNew, 500, newStuff);
+                
+            }
+
+            function drawNew(newStuff) {
+                console.log("in drawNew");
+                $("#currentPlayerDiv").hide();
+                $("#currentPlayerDiv").html(newStuff);
+                var options = { direction: "up"};
+                $("#currentPlayerDiv").show("drop", options);
+            }
+        </script>
+    </body>
+</html>

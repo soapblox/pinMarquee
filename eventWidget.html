@@ -1,0 +1,102 @@
+<html>
+    <head>
+        <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+        <script src="https://code.jquery.com/jquery-3.2.1.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4="
+        crossorigin="anonymous"></script>        
+        <script src="/socket.io/socket.io.js"></script>
+        <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+    </head>
+    <body>
+
+        <span style="width: 500px" id="eventsDiv"></span>
+        <script>
+
+            var pinEvents = [];
+            var pinEventsIndex = 0;
+            var displayEventsSize = 3; 
+            var eventsBeingDisplayed = 0;
+
+            $(function () {
+
+                var socket = io();
+                window['taco'] = socket;
+              //  window['taco'].emit("startPlayerWidget", "startPlayerWidget");
+
+                socket.on("updatePinEvents", function(msg) {
+                    console.log("in updatePinEvents");
+                    var newEvents = JSON.parse(msg);
+                    console.log("we just got events: " + newEvents.length);
+                    console.log(newEvents);
+                    newEvents.forEach(function(anEvent) {
+                        console.log("pushing...");
+                        console.log(anEvent);
+                        pinEvents.push(anEvent);
+                        $("#queueSize").html(pinEvents.length);
+                    })
+                })
+            });
+
+
+            function addEvent() {
+                pinEvents.push("Taco");
+                $("#queueSize").html(pinEvents.length);
+            }
+
+            function drawEvents() {
+
+                console.log("in drawEvents...");
+
+                if (pinEventsIndex == pinEvents.length) {
+                    console.log("No events to draw");
+                    return;
+                }
+
+                console.log("drawing an event...");
+
+                var theSpan = document.createElement("div");
+                theSpan.style.display = "none";
+                theSpan.id = "eventSpan" + pinEventsIndex;
+                var theEventText = "";
+                var aEvent = pinEvents[pinEventsIndex];
+                theEventText += aEvent.player1_name + " (" + aEvent.player1Score +  "-" + aEvent.player2Score + ") " + aEvent.player2_name;
+                var theText = document.createTextNode(theEventText);
+                theSpan.appendChild(theText);
+                $("#queueIndex").html(pinEventsIndex);
+                $("#eventsDiv").prepend(theSpan);
+
+                var options = { direction: "up"};
+                $("#" + theSpan.id).show("drop", options);
+
+                // event queue not full...
+                if (eventsBeingDisplayed < displayEventsSize) {
+                    eventsBeingDisplayed++;
+                }
+                else {
+                    console.log("event queue full, remove last");
+                    var spanToFade = $("#eventSpan" + (pinEventsIndex - displayEventsSize)).fadeOut(); //.hide("drop", options);
+                }
+
+                pinEventsIndex++;
+
+            }
+
+            var theTimer = setInterval(drawEvents, 5000);
+
+        </script>
+
+        <br /> <br />
+        <br /> <br />
+        <br /> <br />
+        <br /> <br />
+        <br /> <br />
+        
+        <button onclick="addEvent()">add event</button>
+        <button onclick="drawEvents()">draw event</button>
+
+        <br />
+
+        queue size: <span id="queueSize"></span> <br />
+        queue index: <span id="queueIndex"></span> <br />
+        
+    </body>
+</html>

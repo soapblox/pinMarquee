@@ -1,0 +1,98 @@
+<html>
+    <head>
+        <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+        <script src="https://code.jquery.com/jquery-3.2.1.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4="
+        crossorigin="anonymous"></script>
+        <script src="marquee.js"></script>
+        <script src="/socket.io/socket.io.js"></script>
+        <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+    </head>
+    <body>
+
+        <span style="width: 500px" id="activeGamesDiv"></span>
+        
+        <script>
+            var pinMarquee = new PinMarquee();
+            var activeGameQueueIndex = 0;
+            var started = false;
+
+            function drawCurrentActiveGameFromQueue() {
+                var theString = "";
+
+                var aMatch = fetchNextActiveMatch();
+
+                theString += "** " + aMatch.player1.name + " (" + aMatch.player1Score + "-" + aMatch.player2Score + ") " + aMatch.player2.name + " ** ";
+
+                aMatch = fetchNextActiveMatch();
+
+                theString += "** " + aMatch.player1.name + " (" + aMatch.player1Score + "-" + aMatch.player2Score + ") " + aMatch.player2.name + " ** ";
+
+                fadeExistingAndLoadNew(theString);
+            }
+
+            function fetchNextActiveMatch() {
+            
+                var found = false;
+                var aMatch;
+                while (!found) {
+                    aMatch = pinMarquee.matches[activeGameQueueIndex];
+                    if (aMatch.state == "open") {
+                        //console.log('active game found' + aMatch.id);
+                        found = true;
+                    }
+                    else {
+                        //console.log("matchIndex " + activeGameQueueIndex + " is not open");
+                    }
+
+                    // increment... reset the loop if necessary
+                    activeGameQueueIndex++;
+                    if (activeGameQueueIndex == pinMarquee.matches.length) {
+                        activeGameQueueIndex = 0;
+                    }
+                }
+
+                return aMatch;
+            }
+
+            $(function () {
+
+                var socket = io();
+                window['taco'] = socket;
+              //  window['taco'].emit("startPlayerWidget", "startPlayerWidget");
+
+                socket.on("activeGameStateUpdate", function(msg) {
+                    console.log("in activeGameStateUpdate");
+
+                    var tempMarquee = JSON.parse(msg);
+                    
+                    pinMarquee.players = tempMarquee.players;
+                    pinMarquee.matches = tempMarquee.matches;
+
+                    console.log(pinMarquee);
+
+                    if (!started) {
+                        started = true;
+                        playerTimer = new interval(10000, drawCurrentActiveGameFromQueue);
+                        playerTimer.run();
+                    }
+                })
+            });
+
+            function fadeExistingAndLoadNew(newStuff) {
+                var options = { direction: "down"};
+                $("#activeGamesDiv").effect("drop", options, 400);
+                setTimeout(drawNew, 500, newStuff);
+                
+            }
+
+            function drawNew(newStuff) {
+                console.log("in drawNew");
+                $("#activeGamesDiv").hide();
+                $("#activeGamesDiv").html(newStuff);
+                var options = { direction: "up"};
+                $("#activeGamesDiv").show("drop", options);
+            }
+
+        </script>
+    </body>
+</html>
