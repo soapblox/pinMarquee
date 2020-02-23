@@ -23,13 +23,13 @@
               //  window['taco'].emit("startPlayerWidget", "startPlayerWidget");
 
                 socket.on("updatePinEvents", function(msg) {
-                    console.log("in updatePinEvents");
+                   // console.log("in updatePinEvents");
                     var newEvents = JSON.parse(msg);
                     console.log("we just got events: " + newEvents.length);
-                    console.log(newEvents);
+                   // console.log(newEvents);
                     newEvents.forEach(function(anEvent) {
-                        console.log("pushing...");
-                        console.log(anEvent);
+                       // console.log("pushing...");
+                        //console.log(anEvent);
                         pinEvents.push(anEvent);
                         $("#queueSize").html(pinEvents.length);
                     })
@@ -44,14 +44,14 @@
 
             function drawEvents() {
 
-                console.log("in drawEvents...");
+               // console.log("in drawEvents...");
 
                 if (pinEventsIndex == pinEvents.length) {
-                    console.log("No events to draw");
+                    //console.log("No events to draw");
                     return;
                 }
 
-                console.log("drawing an event...");
+               // console.log("drawing an event...");
 
                 var theSpan = document.createElement("div");
                 theSpan.style.display = "none";

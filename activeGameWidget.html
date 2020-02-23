@@ -6,8 +6,15 @@
         <script src="marquee.js"></script>
         <script src="/socket.io/socket.io.js"></script>
         <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+        <style>
+            .activeGame {
+                background-color: black;
+                color: white;
+                font-family: Tahoma, Geneva, sans-serif;
+            }
+        </style>
     </head>
-    <body>
+    <body style="background-color: black;">
 
         <span style="width: 500px" id="activeGamesDiv"></span>
         
@@ -17,7 +24,7 @@
             var started = false;
 
             function drawCurrentActiveGameFromQueue() {
-                var theString = "";
+                var theString = "<span class='activeGame'>";
 
                 var aMatch = fetchNextActiveMatch();
 
@@ -27,6 +34,7 @@
 
                 theString += "** " + aMatch.player1.name + " (" + aMatch.player1Score + "-" + aMatch.player2Score + ") " + aMatch.player2.name + " ** ";
 
+                theString += "</span>"
                 fadeExistingAndLoadNew(theString);
             }
 
@@ -86,7 +94,7 @@
             }
 
             function drawNew(newStuff) {
-                console.log("in drawNew");
+                //console.log("in drawNew");
                 $("#activeGamesDiv").hide();
                 $("#activeGamesDiv").html(newStuff);
                 var options = { direction: "up"};

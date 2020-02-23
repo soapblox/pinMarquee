@@ -57,10 +57,10 @@ class PinMarquee {
         var playerMatches = [];
         //console.log(pId);
         for (var i = 0; i < this.matches.length; i++) {
-            console.log(this.matches[i].player1);
-            console.log(this.matches[i].player2);
+            //console.log(this.matches[i].player1);
+            ///console.log(this.matches[i].player2);
             if (typeof this.matches[i].player1 === 'undefined' || typeof this.matches[i].player2 === 'undefined') {
-                console.log("undefined players on match..");
+                //console.log("undefined players on match..");
             }
             else if (this.matches[i].player1.id == pId || this.matches[i].player2.id == pId) {
                 //console.log("found player match...");
@@ -72,12 +72,44 @@ class PinMarquee {
         return playerMatches;
     }
 
+    getWomansMatchesByPlayerId(pId) {
+        var playerMatches = [];
+        //console.log(pId);
+        for (var i = 0; i < this.womensMatches.length; i++) {
+            //console.log(this.matches[i].player1);
+            ///console.log(this.matches[i].player2);
+            if (typeof this.womensMatches[i].player1 === 'undefined' || typeof this.womensMatches[i].player2 === 'undefined') {
+                //console.log("undefined players on match..");
+            }
+            else if (this.womensMatches[i].player1.id == pId || this.womensMatches[i].player2.id == pId) {
+                //console.log("found player match...");
+                //console.log(matches[i]);
+                playerMatches.push(this.womensMatches[i]);
+            }
+        }
+
+        return playerMatches;        
+    }
+
+    getWomanById(pId) {
+          // match doesn't know what player it is yet, so ignore...
+          if (pId == null) {
+            return;
+        }
+        //console.log(this.players.length);
+        for (var i = 0; i < this.women.length; i++) {
+            if (this.women[i].id == pId) {
+                return this.women[i];
+            }
+        }
+    }
+
     getPlayerById(pId) {
         // match doesn't know what player it is yet, so ignore...
         if (pId == null) {
            return;
        }
-       console.log(this.players.length);
+       //console.log(this.players.length);
        for (var i = 0; i < this.players.length; i++) {
            if (this.players[i].id == pId) {
                return this.players[i];
