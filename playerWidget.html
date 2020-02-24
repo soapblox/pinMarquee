@@ -16,16 +16,14 @@
             }
         </style>
 
-        <span style="width: 500px; background-color: black;" id="currentPlayerDiv"></span>
+        <span style="width: 1200px; background-color: black;" id="currentPlayerDiv"></span>
         <script>
 
             var pinMarquee = new PinMarquee();
             var playerTimer;
 
-            var playersIndex = 0;
-            var womansIndex = 0;
-
-            var drawNationals = true;
+            var currentPlayerIndex = 0;
+            var currentTournamentIndex = 0;
 
             var started = false;
 
@@ -51,43 +49,30 @@
             function drawCurrentPlayer() {
                 var playersToUse;
                 var currentPlayer = "<span class='currentPlayer'>";
-                if (drawNationals) {
-                    currentPlayer += pinMarquee.players[playersIndex].name;
-                    var currentPlayerId = pinMarquee.players[playersIndex].id;
 
-                    //console.log(currentPlayer);
+                var currentTourney = pinMarquee.tournaments[currentTournamentIndex];
 
-                    currentPlayer += makePlayerMatchesString(pinMarquee.getMatchesByPlayerId(currentPlayerId), currentPlayerId);
+                //currentPlayer += pinMarquee.players[playersIndex].name;
+                currentPlayer += currentTourney.players[currentPlayerIndex].name;
+                var currentPlayerId = currentTourney.players[currentPlayerIndex].id;
 
-                    // $("#currentPlayerDiv").html(currentPlayer + matchString);
-                    playersIndex++;
+                //console.log(currentPlayer);
 
-                    // reset the loop, switch to women's...
-                    if (playersIndex == pinMarquee.players.length) {
-                        playersIndex = 0;
-                        drawNationals = false;
+                currentPlayer += makePlayerMatchesString(currentTourney.getMatchesByPlayerId(currentPlayerId), currentPlayerId);
+
+                // $("#currentPlayerDiv").html(currentPlayer + matchString);
+                currentPlayerIndex++;
+
+                // finished with current tournament, switch to next...
+                if (currentPlayerIndex == currentTourney.players.length) {
+                    currentPlayerIndex = 0;
+                    currentTournamentIndex++;
+
+                    // finished all tournaments, go back to beginning...
+                    if (currentTournamentIndex == pinMarquee.tournaments.length) {
+                        currentTournamentIndex = 0;
                     }
                 }
-                else {
-                    currentPlayer += pinMarquee.womens[womansIndex].name;
-                    var currentPlayerId = pinMarquee.womens[womansIndex].id;
-
-                    //console.log(currentPlayer);
-
-                    currentPlayer += makePlayerMatchesString(pinMarquee.getWomansMatchesByPlayerId(currentPlayerId), currentPlayerId);
-
-                    // $("#currentPlayerDiv").html(currentPlayer + matchString);
-                    womansIndex++;
-
-                    // reset the loop, switch to women's...
-                    if (womansIndex == pinMarquee.womens.length) {
-                        womansIndex = 0;
-                        drawNationals = true;
-                    }
-                }
-                
-
-                
 
                 currentPlayer += "</span>"
 
@@ -110,17 +95,26 @@
                     console.log("in playerStateUpdate");
 
                     var tempMarquee = JSON.parse(msg);
+
+                    console.log(tempMarquee);
+
+                    // copy over the tournaments....
+                    for (var i = 0; i < tempMarquee.tournaments.length; i++) {
+                        pinMarquee.tournaments[i] = new Tournament();
+                        pinMarquee.tournaments[i].players = tempMarquee.tournaments[i].players;
+                        pinMarquee.tournaments[i].matches = tempMarquee.tournaments[i].matches;
+                    }
                     
-                    pinMarquee.players = tempMarquee.players;
+                    /*pinMarquee.players = tempMarquee.players;
                     pinMarquee.matches = tempMarquee.matches;
                     pinMarquee.womens = tempMarquee.womens;
-                    pinMarquee.womensMatches = tempMarquee.womensMatches;
+                    pinMarquee.womensMatches = tempMarquee.womensMatches; */
 
                     console.log(pinMarquee);
 
                     if (!started) {
                         started = true;
-                        playerTimer = new interval(1000, drawCurrentPlayer);
+                        playerTimer = new interval(4000, drawCurrentPlayer);
                         playerTimer.run();
                     }
                 })

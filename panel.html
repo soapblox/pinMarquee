@@ -29,81 +29,28 @@
         $(document).ready(function() {
 
             $("#loadButton").on("click", function() {
-                
+
                 tournamentId = $("#tournamentId").val();
                 womansId = $("#womensId").val();
                 apiKey = $("#apiKey").val();
+                pinMarquee.apiKey = apiKey;
                 timerInterval = 1000 * parseInt($("#pollingSecs").val());
 
                 console.log("National tournamentId: " + tournamentId + ", womansId: " + womansId + ", apiKey: " + apiKey + ", interval: " + timerInterval);
 
-                // load Nationals Players...
-                var nationalsPlayerUrl = cUrl + "/" + tournamentId + "/participants.json?api_key=" + apiKey;
-                var womansPlayerUrl = cUrl + "/" + womansId + "/participants.json?api_key=" + apiKey;
-                var callingUrl = cUrl + "/" + tournamentId + "/matches.json?api_key=" + apiKey;
+                var nationals = new Tournament();
+                nationals.id = tournamentId;
+                // fetch players and matches, done with async = false
+                nationals.loadTournament(apiKey);
 
-                $.ajax({
-                    url: nationalsPlayerUrl,
-                    dataType: "json",
-                    method: "GET"
-                }).done(function(data) {
+               // var womens = new Tournament();
+               // womens.id = womansId;
+                // fetch players and matches, done with async = false
+               // womens.loadTournament(apiKey);
 
-                    numOfPlayers = data.length;
-                    for (var i = 0; i < numOfPlayers; i++) {
-                        
-                        var aPlayer = new Player();
-                        
-                        aPlayer.id = data[i].participant.id;
-                        aPlayer.name = data[i].participant.display_name;
-                        //players.push(aPlayer);
-                        pinMarquee.players.push(aPlayer);
-                    }
-
-                    console.log(pinMarquee.players.length + " National players loaded...");
-
-                    var nationalsMatchesUrl = cUrl + "/" + tournamentId + "/matches.json?api_key=" + apiKey;
-                    $.ajax({
-                        url: nationalsMatchesUrl,
-                        dataType: "json",
-                        method: "GET"
-                    }).done(function(data) {
-                        pinMarquee.matches = parseChallongeMatches(data);
-                        console.log(pinMarquee.matches.length + " National matches loaded...");
-                    });                    
-                });
-
-                $.ajax({
-                    url: womansPlayerUrl,
-                    dataType: "json",
-                    method: "GET"
-                }).done(function(data) {
-
-                    numOfPlayers = data.length;
-                    for (var i = 0; i < numOfPlayers; i++) {
-                        
-                        var aPlayer = new Player();
-                        
-                        aPlayer.id = data[i].participant.id;
-                        aPlayer.name = data[i].participant.display_name;
-                        //players.push(aPlayer);
-                        pinMarquee.players.push(aPlayer);
-                    }
-
-                    console.log(pinMarquee.players.length + " Women players loaded...");
-                    var womansMatchesUrl = cUrl + "/" + womansId + "/matches.json?api_key=" + apiKey;
-
-                    $.ajax({
-                        url: womansMatchesUrl,
-                        dataType: "json",
-                        method: "GET"
-                    }).done(function(data) {
-                        pinMarquee.womensMatches = parseChallongeMatches(data);
-                        console.log(pinMarquee.womensMatches.length + " Womens matches loaded...");
-                    });
-                    
-                    
-
-                });
+                // add the tourn
+                pinMarquee.tournaments.push(nationals);
+               // pinMarquee.tournaments.push(womens);
             });
 
             $("#getPlayers").on("click", function() {
@@ -177,11 +124,23 @@
         }
 
         function fetchMatches() {
-            var callingUrl = cUrl + "/" + tournamentId + "/matches.json?api_key=" + apiKey;
+
+            var deferred = pinMarquee.fetchResults();
+            console.log(deferred.state());
+
+            deferred.done(function(data) {
+                console.log(data);
+                window['taco'].emit('panelToPlayerUpdate', JSON.stringify(pinMarquee));
+                window['taco'].emit('panelToActiveGameUpdate', JSON.stringify(pinMarquee));
+                window['taco'].emit('pinEvents', JSON.stringify(data));
+            });
+
+           /* var callingUrl = cUrl + "/" + tournamentId + "/matches.json?api_key=" + apiKey;
             $.ajax({
                 url: callingUrl,
                 dataType: "json",
-                method: "GET"
+                method: "GET",
+                async: false
             }).done(function(data) {
 
                 var challongeData = parseChallongeMatches(data);
@@ -198,7 +157,7 @@
 
                 // send delts to event widget...
                 window['taco'].emit('pinEvents', JSON.stringify(pinEventChanges));
-            });
+            }); */
         }
 
         /**
@@ -207,72 +166,76 @@
          */
         function processMatchUpdate(challongeData) {
             var deltaEvents = []
-            var theMatches = pinMarquee.matches;
-            for (var i = 0; i < theMatches.length; i++) {
-                if (theMatches[i].id == challongeData[i].id) {
-                    if (theMatches[i].state != challongeData[i].state) {
-                        console.log("we have a state change... copy it over");
-                        theMatches[i].state = challongeData[i].state
-                        theMatches[i].player1 = challongeData[i].player1;
-                        theMatches[i].player2 = challongeData[i].player2;
-                        theMatches[i].player1Score = challongeData[i].player1Score;
-                        theMatches[i].player2Score = challongeData[i].player2Score;
-                    }
-                    if (theMatches[i].matchScore == challongeData[i].matchScore) {
-                        console.log("nothing changed.." + challongeData[i].matchScore);
-                    }
-                    else {
-                        // when something changes, we copy the results from the server to
-                        // the values inside our "System of Record": the matches array.
-                        console.log("something changed!");
+            var theTourneys = pinMarque.tournaments;
+            for (var j = 0; j < theTourneys.length; j++) {
+                var theMatches = pinMarquee.tournaments[j].matches;
+                for (var i = 0; i < theMatches.length; i++) {
+                    if (theMatches[i].id == challongeData[i].id) {
+                        if (theMatches[i].state != challongeData[i].state) {
+                            console.log("we have a state change... copy it over");
+                            theMatches[i].state = challongeData[i].state
+                            theMatches[i].player1 = challongeData[i].player1;
+                            theMatches[i].player2 = challongeData[i].player2;
+                            theMatches[i].player1Score = challongeData[i].player1Score;
+                            theMatches[i].player2Score = challongeData[i].player2Score;
+                        }
+                        if (theMatches[i].matchScore == challongeData[i].matchScore) {
+                            console.log("nothing changed.." + challongeData[i].matchScore);
+                        }
+                        else {
+                            // when something changes, we copy the results from the server to
+                            // the values inside our "System of Record": the matches array.
+                            console.log("something changed!");
 
-                        // Figure out exactly what changed...
-                        var player1ScoreChanged = false;
-                        var player2ScoreChanged = false;
+                            // Figure out exactly what changed...
+                            var player1ScoreChanged = false;
+                            var player2ScoreChanged = false;
+                            
+                            theMatches[i].matchScore = challongeData[i].matchScore;
+
+                            if (theMatches[i].player1Score != challongeData[i].player1Score) {
+                                console.log("player1 score changed");
+                                player1ScoreChanged = true;
+                            }
+
+                            if (theMatches[i].player2Score != challongeData[i].player2Score) {
+                                console.log("player2 score changed");
+                                player2ScoreChanged = true;
+                            }
+
+                            // UPDATE THE SCORE in SOR
+                            theMatches[i].player1Score = challongeData[i].player1Score;
+                            theMatches[i].player2Score = challongeData[i].player2Score;
+                            
+                            // add EVENT
+                            var pinEvent = {};
+                            pinEvent.matchId = theMatches[i].id;
+
+                            // indicate if player1 Score has changed in this update..
+                            pinEvent.player1Score = player1ScoreChanged ? "*" + theMatches[i].player1Score + "*" : theMatches[i].player1Score;
+                            pinEvent.player1_name = theMatches[i].player1.name;
+
+                            // indicate if player2 Score has changed in this update..
+                            pinEvent.player2Score = player2ScoreChanged ? "*" + theMatches[i].player2Score + "*" : theMatches[i].player2Score;
+                            pinEvent.player2_name = theMatches[i].player2.name;
+
+                            // same state, it's just a score change...
+                            if (theMatches[i].state == challongeData[i].state) {
+                                pinEvent.type = "scoreChange";
+                            }
+                            else {  // somebody won!  change their state in SOR
+                                pinEvent.type = "matchChange";
+                                theMatches[i].state = challongeData.state
+                            }
+
+                            deltaEvents.push(pinEvent);
+
+                        }
                         
-                        theMatches[i].matchScore = challongeData[i].matchScore;
-
-                        if (theMatches[i].player1Score != challongeData[i].player1Score) {
-                            console.log("player1 score changed");
-                            player1ScoreChanged = true;
-                        }
-
-                        if (theMatches[i].player2Score != challongeData[i].player2Score) {
-                            console.log("player2 score changed");
-                            player2ScoreChanged = true;
-                        }
-
-                        // UPDATE THE SCORE in SOR
-                        theMatches[i].player1Score = challongeData[i].player1Score;
-                        theMatches[i].player2Score = challongeData[i].player2Score;
-                        
-                        // add EVENT
-                        var pinEvent = {};
-                        pinEvent.matchId = theMatches[i].id;
-
-                        // indicate if player1 Score has changed in this update..
-                        pinEvent.player1Score = player1ScoreChanged ? "*" + theMatches[i].player1Score + "*" : theMatches[i].player1Score;
-                        pinEvent.player1_name = theMatches[i].player1.name;
-
-                        // indicate if player2 Score has changed in this update..
-                        pinEvent.player2Score = player2ScoreChanged ? "*" + theMatches[i].player2Score + "*" : theMatches[i].player2Score;
-                        pinEvent.player2_name = theMatches[i].player2.name;
-
-                        // same state, it's just a score change...
-                        if (theMatches[i].state == challongeData[i].state) {
-                            pinEvent.type = "scoreChange";
-                        }
-                        else {  // somebody won!  change their state in SOR
-                            pinEvent.type = "matchChange";
-                            theMatches[i].state = challongeData.state
-                        }
-
-                        deltaEvents.push(pinEvent);
-
                     }
-                    
                 }
             }
+
             return deltaEvents;
         }
 
@@ -365,20 +328,20 @@
 </head>
 <body>
     <h2>Challonge Admin Panel</h2>
-    <p style="border: 1px solid black; padding: 5px">
-        Nationals: <input type="text" id="tournamentId" value="c80iwk0p" size="10" /> <br />
+    <p style="border: 1px solid black; padding: 5px">lrdeyl1i c80iwk0p
+        Nationals: <input type="text" id="tournamentId" value="lrdeyl1i" size="10" /> <br />
         Womens: <input type="text" id="womensId" value="1fvxqcqw" size="10" /> <br />
         API Key: <input type="text" id="apiKey" value="FamWkhEPZ2bM6QCRVRZXZoIWatyEmRvepJf3odHx" size="50" /> <br />
         Challonge Update Interval: <input type="text" id="pollingSecs" value="60" size="4"/> seconds <br />
         <button id="loadButton">LOAD</button> 
     </p>
     <p>
-        <button id="getPlayers">Load Players</button>
-        <button id="getMatches">Matches</button>
-        <button id="startPolling">Start Polling</button>
-        <button id="stopPolling">Stop Polling</button>
+        <!-- <button id="getPlayers">Load Players</button>
+        <button id="getMatches">Matches</button> -->
+        <button id="startPolling">Fetch from Challonge</button>
+        <!--         <button id="stopPolling">Stop Polling</button> -->
         <button id="startPlayerMarquee">Start Player Marquee</button>
-        <button id="stopPlayerMarquee">Stop Player Marquee</button>
+        <!-- <button id="stopPlayerMarquee">Stop Player Marquee</button> -->
         <button id="startActiveGameMarquee">Start Active Game</button>
         
     </p>

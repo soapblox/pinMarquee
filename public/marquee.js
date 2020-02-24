@@ -25,6 +25,8 @@ function interval(duration, fn) {
     }
 }
 
+var gDeltaEvents = [];
+
 class Player {
     constructor(id, name) {
         this.name = name;
@@ -45,12 +47,13 @@ class Match {
     }
 }
 
-class PinMarquee {
+class Tournament {
     constructor() {
+        this.id = "";
+        this.name = "";
         this.players = [];
-        this.women = []
         this.matches = [];
-        this.womensMatches = [];
+        this.deltaEvents = [];
     }
 
     getMatchesByPlayerId(pId) {
@@ -70,39 +73,7 @@ class PinMarquee {
         }
 
         return playerMatches;
-    }
-
-    getWomansMatchesByPlayerId(pId) {
-        var playerMatches = [];
-        //console.log(pId);
-        for (var i = 0; i < this.womensMatches.length; i++) {
-            //console.log(this.matches[i].player1);
-            ///console.log(this.matches[i].player2);
-            if (typeof this.womensMatches[i].player1 === 'undefined' || typeof this.womensMatches[i].player2 === 'undefined') {
-                //console.log("undefined players on match..");
-            }
-            else if (this.womensMatches[i].player1.id == pId || this.womensMatches[i].player2.id == pId) {
-                //console.log("found player match...");
-                //console.log(matches[i]);
-                playerMatches.push(this.womensMatches[i]);
-            }
-        }
-
-        return playerMatches;        
-    }
-
-    getWomanById(pId) {
-          // match doesn't know what player it is yet, so ignore...
-          if (pId == null) {
-            return;
-        }
-        //console.log(this.players.length);
-        for (var i = 0; i < this.women.length; i++) {
-            if (this.women[i].id == pId) {
-                return this.women[i];
-            }
-        }
-    }
+    }    
 
     getPlayerById(pId) {
         // match doesn't know what player it is yet, so ignore...
@@ -115,5 +86,281 @@ class PinMarquee {
                return this.players[i];
            }
        }
+    }
+
+    processMatchUpdate(challongeData) {
+        var deltaEvents = []
+
+        var theMatches = this.matches;
+        for (var i = 0; i < theMatches.length; i++) {
+            if (theMatches[i].id == challongeData[i].id) {
+                if (theMatches[i].state != challongeData[i].state) {
+                    console.log("we have a state change... copy it over");
+                    theMatches[i].state = challongeData[i].state
+                    theMatches[i].player1 = challongeData[i].player1;
+                    theMatches[i].player2 = challongeData[i].player2;
+                    theMatches[i].player1Score = challongeData[i].player1Score;
+                    theMatches[i].player2Score = challongeData[i].player2Score;
+                }
+                if (theMatches[i].matchScore == challongeData[i].matchScore) {
+                    //console.log("nothing changed.." + challongeData[i].matchScore);
+                }
+                else {
+                    // when something changes, we copy the results from the server to
+                    // the values inside our "System of Record": the matches array.
+                    console.log("something changed!");
+
+                    // Figure out exactly what changed...
+                    var player1ScoreChanged = false;
+                    var player2ScoreChanged = false;
+                    
+                    theMatches[i].matchScore = challongeData[i].matchScore;
+
+                    if (theMatches[i].player1Score != challongeData[i].player1Score) {
+                        console.log("player1 score changed");
+                        player1ScoreChanged = true;
+                    }
+
+                    if (theMatches[i].player2Score != challongeData[i].player2Score) {
+                        console.log("player2 score changed");
+                        player2ScoreChanged = true;
+                    }
+
+                    // UPDATE THE SCORE in SOR
+                    theMatches[i].player1Score = challongeData[i].player1Score;
+                    theMatches[i].player2Score = challongeData[i].player2Score;
+                    
+                    // add EVENT
+                    var pinEvent = {};
+                    pinEvent.matchId = theMatches[i].id;
+
+                    // indicate if player1 Score has changed in this update..
+                    pinEvent.player1Score = player1ScoreChanged ? "*" + theMatches[i].player1Score + "*" : theMatches[i].player1Score;
+                    pinEvent.player1_name = theMatches[i].player1.name;
+
+                    // indicate if player2 Score has changed in this update..
+                    pinEvent.player2Score = player2ScoreChanged ? "*" + theMatches[i].player2Score + "*" : theMatches[i].player2Score;
+                    pinEvent.player2_name = theMatches[i].player2.name;
+
+                    // same state, it's just a score change...
+                    if (theMatches[i].state == challongeData[i].state) {
+                        pinEvent.type = "scoreChange";
+                    }
+                    else {  // somebody won!  change their state in SOR
+                        pinEvent.type = "matchChange";
+                        theMatches[i].state = challongeData.state
+                    }
+
+                    deltaEvents.push(pinEvent);
+
+                }
+                
+            }
+        }
+        
+
+        return deltaEvents;
+    }
+
+    parseChallongeMatches(data) {
+        var challongeMatches = [];
+        numOfMatches = data.length;
+        for (var i = 0; i < numOfMatches; i++) {
+            var aMatch = new Match();
+            
+            aMatch.id = data[i].match.id;
+            aMatch.state = data[i].match.state;
+            aMatch.player1 = this.getPlayerById(data[i].match.player1_id);
+            aMatch.player2 = this.getPlayerById(data[i].match.player2_id);
+            // if there is nothing here, it's 0-0
+            if (data[i].match.scores_csv == "") {
+                aMatch.matchScore = "0-0";
+            }
+            else {
+                aMatch.matchScore = data[i].match.scores_csv;
+            }
+            aMatch.round = data[i].match.round;
+
+            aMatch.player1Score = aMatch.matchScore.substring(0, 1);
+            aMatch.player2Score = aMatch.matchScore.substring(2, 3);
+
+            //console.log(aMatch.player1Score + " " + aMatch.player2Score);
+            //doLogging(aMatch, true);
+            challongeMatches.push(aMatch);
+        }
+
+        console.log(challongeMatches);
+
+        return challongeMatches;
+    }
+
+    loadPlayers(apiKey) {
+        var playerUrl = cUrl + "/" + this.id + "/participants.json?api_key=" + apiKey;
+
+        console.log("playersUrl: " + playerUrl);
+
+        var playerDeferred = $.ajax({
+            url: playerUrl,
+            dataType: "json",
+            method: "GET",
+            async: false,
+            context: this
+        }).done(function(data) {
+            var theTourney = this;
+
+            numOfPlayers = data.length;
+            for (var i = 0; i < numOfPlayers; i++) {
+                
+                var aPlayer = new Player();
+                
+                aPlayer.id = data[i].participant.id;
+                aPlayer.name = data[i].participant.display_name;
+                //players.push(aPlayer);
+                this.players.push(aPlayer);
+            }
+
+            console.log(this.players.length + " players loaded...");
+        });
+
+        return playerDeferred;
+    }
+
+    loadTournament(apiKey) {
+
+        var playerUrl = cUrl + "/" + this.id + "/participants.json?api_key=" + apiKey;
+
+        console.log("playersUrl: " + playerUrl);
+
+        var playerDeferred = $.ajax({
+            url: playerUrl,
+            dataType: "json",
+            method: "GET",
+            context: this,
+            async: false
+        }).done(function(data) {
+
+            var theTourney = this;
+
+            numOfPlayers = data.length;
+            for (var i = 0; i < numOfPlayers; i++) {
+                
+                var aPlayer = new Player();
+                
+                aPlayer.id = data[i].participant.id;
+                aPlayer.name = data[i].participant.display_name;
+                //players.push(aPlayer);
+                this.players.push(aPlayer);
+            }
+
+            console.log(this.players.length + " players loaded...");
+
+            var matchesUrl = cUrl + "/" + theTourney.id + "/matches.json?api_key=" + apiKey;
+            $.ajax({
+                url: matchesUrl,
+                dataType: "json",
+                method: "GET",
+                context: theTourney,
+                async: false
+            }).done(function(data) {
+                theTourney.matches = theTourney.parseChallongeMatches(data);
+                console.log(theTourney.matches.length + " matches loaded...");
+            });
+        });
+
+        return playerDeferred;
+    }
+
+    fetchTournament(apiKey) {
+        // reset deltas
+        gDeltaEvents = [];
+
+        var d = $.Deferred();
+        var callingUrl = cUrl + "/" + this.id + "/matches.json?api_key=" + apiKey;
+        $.ajax({
+            url: callingUrl,
+            dataType: "json",
+            method: "GET",
+            async: false,
+            context: this
+        }).done(function(data) {
+
+            var challongeData = this.parseChallongeMatches(data);
+
+            
+
+            var pinEventChanges = this.processMatchUpdate(challongeData);
+
+            console.log(pinEventChanges);
+
+            pinEventChanges.forEach(function(anEvent) {
+                gDeltaEvents.push(anEvent);
+            });
+            
+
+            d.resolve(this);
+
+            // send update pinMarquee to player/game widgets...
+            //window['taco'].emit('panelToPlayerUpdate', JSON.stringify(pinMarquee));
+            //window['taco'].emit('panelToActiveGameUpdate', JSON.stringify(pinMarquee));
+
+            // send delts to event widget...
+            //window['taco'].emit('pinEvents', JSON.stringify(pinEventChanges));
+        });
+
+        return d;
+    }
+}
+
+class PinMarquee {
+    constructor() {
+        this.tournaments = [];
+        this.currentTournamentIndex = 0;
+        this.apiKey = "";
+        this.deltaEvents = [];
+    }
+
+    fetchResults() {
+        var d = $.Deferred();
+        console.log(d.state());
+        this.deltaEvents = [];
+        var tournament = this.tournaments[i];
+        var defArray = [];
+        for (var i = 0; i < this.tournaments.length; i++) {
+            var fDeferred = this.tournaments[i].fetchTournament(this.apiKey);
+
+            defArray.push(fDeferred);
+
+            fDeferred.done(function(data) {
+                console.log(data);
+                console.log("fetch Tournament done...");
+                //this.deltaEvents.push(data.deltaEvents);
+                //console.log(tournament.deltaEvents);
+            });
+
+
+            //this.deltaEvents.push(this.tournaments[i].fetchTournament(this.apiKey));
+        }
+
+        var amIDone = false;
+
+        while (!amIDone) {
+            console.log(amIDone);
+            var b = true;
+            for (var j = 0; j < defArray.length; j++) {
+                if (defArray[j].state() == "pending") {
+                    console.log("something is pending...");
+                    b = false;
+                }
+                console.log(b);
+            }
+
+            if (b) {
+                amIDone = true;
+            }
+            
+        }
+        d.resolve(gDeltaEvents);
+
+        return d;
     }
 }

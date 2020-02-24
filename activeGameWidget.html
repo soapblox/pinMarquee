@@ -16,11 +16,13 @@
     </head>
     <body style="background-color: black;">
 
-        <span style="width: 500px" id="activeGamesDiv"></span>
+        <span style="width: 1200px" id="activeGamesDiv"></span>
         
         <script>
             var pinMarquee = new PinMarquee();
             var activeGameQueueIndex = 0;
+            var currentTournamentIndex = 0;
+
             var started = false;
 
             function drawCurrentActiveGameFromQueue() {
@@ -43,7 +45,7 @@
                 var found = false;
                 var aMatch;
                 while (!found) {
-                    aMatch = pinMarquee.matches[activeGameQueueIndex];
+                    aMatch = pinMarquee.tournaments[currentTournamentIndex].matches[activeGameQueueIndex];
                     if (aMatch.state == "open") {
                         //console.log('active game found' + aMatch.id);
                         found = true;
@@ -52,10 +54,16 @@
                         //console.log("matchIndex " + activeGameQueueIndex + " is not open");
                     }
 
-                    // increment... reset the loop if necessary
+                    // finished with current tournament, switch to next...
                     activeGameQueueIndex++;
-                    if (activeGameQueueIndex == pinMarquee.matches.length) {
+                    if (activeGameQueueIndex == pinMarquee.tournaments[currentTournamentIndex].matches.length) {
                         activeGameQueueIndex = 0;
+                        currentTournamentIndex++;
+
+                        // finished all tournaments, go back to beginning...
+                        if (currentTournamentIndex == pinMarquee.tournaments.length) {
+                            currentTournamentIndex = 0;
+                        }                        
                     }
                 }
 
@@ -72,15 +80,21 @@
                     console.log("in activeGameStateUpdate");
 
                     var tempMarquee = JSON.parse(msg);
-                    
-                    pinMarquee.players = tempMarquee.players;
-                    pinMarquee.matches = tempMarquee.matches;
 
-                    console.log(pinMarquee);
+                    console.log(tempMarquee);
+
+                    // copy over the tournaments....
+                    for (var i = 0; i < tempMarquee.tournaments.length; i++) {
+                        pinMarquee.tournaments[i] = new Tournament();
+                        pinMarquee.tournaments[i].players = tempMarquee.tournaments[i].players;
+                        pinMarquee.tournaments[i].matches = tempMarquee.tournaments[i].matches;
+                    }
+
+                    //console.log(pinMarquee);
 
                     if (!started) {
                         started = true;
-                        playerTimer = new interval(10000, drawCurrentActiveGameFromQueue);
+                        playerTimer = new interval(4000, drawCurrentActiveGameFromQueue);
                         playerTimer.run();
                     }
                 })
