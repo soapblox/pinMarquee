@@ -58,19 +58,24 @@ class Tournament {
 
     getMatchesByPlayerId(pId) {
         var playerMatches = [];
-        //console.log(pId);
+        console.log(pId + " " + this.matches.length);
         for (var i = 0; i < this.matches.length; i++) {
-            //console.log(this.matches[i].player1);
-            ///console.log(this.matches[i].player2);
-            if (typeof this.matches[i].player1 === 'undefined' || typeof this.matches[i].player2 === 'undefined') {
+ 
+            // if no players are defined, ignore
+            if (typeof this.matches[i].player1 === 'undefined' && typeof this.matches[i].player2 === 'undefined') {
                 //console.log("undefined players on match..");
             }
-            else if (this.matches[i].player1.id == pId || this.matches[i].player2.id == pId) {
-                //console.log("found player match...");
-                //console.log(matches[i]);
+            else if (typeof this.matches[i].player1 !== 'undefined' && this.matches[i].player1.id == pId) {
+                // player1 is defined and matches the playerId
+                playerMatches.push(this.matches[i]);
+            }
+            else if (typeof this.matches[i].player2 !== 'undefined' && this.matches[i].player2.id == pId) {
+                // player2 is defined and matches the playerId
                 playerMatches.push(this.matches[i]);
             }
         }
+
+        console.log(pId + " " + this.matches.length);
 
         return playerMatches;
     }    
@@ -95,66 +100,101 @@ class Tournament {
         for (var i = 0; i < theMatches.length; i++) {
             if (theMatches[i].id == challongeData[i].id) {
                 if (theMatches[i].state != challongeData[i].state) {
-                    console.log("we have a state change... copy it over");
+                    console.log("we have a state change...");
+
+                    var generateEvent = false;
+
+                    if (theMatches[i].state == "pending" && challongeData[i].state == "open") {
+                        console.log("..but it's the start of a new match.");
+                        // so make sure both players are set?
+                        theMatches[i].player1 = challongeData[i].player1;
+                        theMatches[i].player2 = challongeData[i].player2;
+                    }
+                    else if (theMatches[i].state == "open" && challongeData[i].state == "complete") {
+                        generateEvent = true;
+                        console.log("... and it's the end of the match.");
+                    }
+
+                    // update the SOR
                     theMatches[i].state = challongeData[i].state
-                    theMatches[i].player1 = challongeData[i].player1;
-                    theMatches[i].player2 = challongeData[i].player2;
                     theMatches[i].player1Score = challongeData[i].player1Score;
                     theMatches[i].player2Score = challongeData[i].player2Score;
-                }
-                if (theMatches[i].matchScore == challongeData[i].matchScore) {
-                    //console.log("nothing changed.." + challongeData[i].matchScore);
-                }
-                else {
-                    // when something changes, we copy the results from the server to
-                    // the values inside our "System of Record": the matches array.
-                    console.log("something changed!");
-
-                    // Figure out exactly what changed...
-                    var player1ScoreChanged = false;
-                    var player2ScoreChanged = false;
-                    
                     theMatches[i].matchScore = challongeData[i].matchScore;
 
-                    if (theMatches[i].player1Score != challongeData[i].player1Score) {
-                        console.log("player1 score changed");
-                        player1ScoreChanged = true;
-                    }
-
-                    if (theMatches[i].player2Score != challongeData[i].player2Score) {
-                        console.log("player2 score changed");
-                        player2ScoreChanged = true;
-                    }
-
-                    // UPDATE THE SCORE in SOR
-                    theMatches[i].player1Score = challongeData[i].player1Score;
-                    theMatches[i].player2Score = challongeData[i].player2Score;
-                    
-                    // add EVENT
-                    var pinEvent = {};
-                    pinEvent.matchId = theMatches[i].id;
-
-                    // indicate if player1 Score has changed in this update..
-                    pinEvent.player1Score = player1ScoreChanged ? "*" + theMatches[i].player1Score + "*" : theMatches[i].player1Score;
-                    pinEvent.player1_name = theMatches[i].player1.name;
-
-                    // indicate if player2 Score has changed in this update..
-                    pinEvent.player2Score = player2ScoreChanged ? "*" + theMatches[i].player2Score + "*" : theMatches[i].player2Score;
-                    pinEvent.player2_name = theMatches[i].player2.name;
-
-                    // same state, it's just a score change...
-                    if (theMatches[i].state == challongeData[i].state) {
-                        pinEvent.type = "scoreChange";
-                    }
-                    else {  // somebody won!  change their state in SOR
+                    if (generateEvent) {
+                        var pinEvent = {};
+                        pinEvent.matchId = theMatches[i].id;
+                        pinEvent.player1_name = theMatches[i].player1.name;
+                        pinEvent.player2_name = theMatches[i].player2.name;
+                        pinEvent.player1Score = theMatches[i].player1Score;
+                        pinEvent.player2Score = theMatches[i].player2Score;
+                        pinEvent.round = theMatches[i].round;
                         pinEvent.type = "matchChange";
-                        theMatches[i].state = challongeData.state
+                        console.log(pinEvent);
+                        deltaEvents.push(pinEvent);
                     }
-
-                    deltaEvents.push(pinEvent);
-
                 }
-                
+                else { // the state is the same
+                    // and if the score is the same, no event needed...
+                    if (theMatches[i].matchScore == challongeData[i].matchScore) {
+                        // but maybe a player has been set?
+                        if (typeof challongeData[i].player1 !== 'undefined') {
+                            console.log("we have a player 1...")
+                            theMatches[i].player1 = challongeData[i].player1;
+                        }
+
+                        if (typeof challongeData[i].player2 !== 'undefined') {
+                            console.log("we have a player 2...")
+                            theMatches[i].player2 = challongeData[i].player2;
+                        }
+                    }
+                    else {
+                        // when something changes, we copy the results from the server to
+                        // the values inside our "System of Record": the matches array.
+                        console.log("pending match changed!");
+
+                        // Figure out exactly what changed...
+                        var player1ScoreChanged = false;
+                        var player2ScoreChanged = false;
+                        
+                        theMatches[i].matchScore = challongeData[i].matchScore;
+
+                        if (theMatches[i].player1Score != challongeData[i].player1Score) {
+                            console.log("player1 score changed");
+                            player1ScoreChanged = true;
+                        }
+
+                        if (theMatches[i].player2Score != challongeData[i].player2Score) {
+                            console.log("player2 score changed");
+                            player2ScoreChanged = true;
+                        }
+
+                        // UPDATE THE SCORE in SOR
+                        theMatches[i].player1Score = challongeData[i].player1Score;
+                        theMatches[i].player2Score = challongeData[i].player2Score;
+                        
+                        // add EVENT
+                        var pinEvent = {};
+                        pinEvent.matchId = theMatches[i].id;
+                        pinEvent.round = theMatches[i].round;
+                        pinEvent.player1ScoreChanged = player1ScoreChanged;
+                        pinEvent.player2ScoreChanged = player2ScoreChanged;
+
+                        // indicate if player1 Score has changed in this update..
+                        pinEvent.player1Score = theMatches[i].player1Score;
+                        pinEvent.player1_name = theMatches[i].player1.name;
+
+                        // indicate if player2 Score has changed in this update..
+                        pinEvent.player2Score = theMatches[i].player2Score;
+                        pinEvent.player2_name = theMatches[i].player2.name;
+
+                        // same state, it's just a score change...
+                        pinEvent.type = "scoreChange";
+    
+                        deltaEvents.push(pinEvent);
+
+                    }
+                }
             }
         }
         
@@ -271,8 +311,6 @@ class Tournament {
     }
 
     fetchTournament(apiKey) {
-        // reset deltas
-        gDeltaEvents = [];
 
         var d = $.Deferred();
         var callingUrl = cUrl + "/" + this.id + "/matches.json?api_key=" + apiKey;
@@ -320,8 +358,11 @@ class PinMarquee {
     }
 
     fetchResults() {
+        // reset deltas
+        gDeltaEvents = [];
+
         var d = $.Deferred();
-        console.log(d.state());
+        //console.log(d.state());
         this.deltaEvents = [];
         var tournament = this.tournaments[i];
         var defArray = [];

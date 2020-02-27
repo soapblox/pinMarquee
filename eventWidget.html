@@ -5,10 +5,28 @@
         crossorigin="anonymous"></script>        
         <script src="/socket.io/socket.io.js"></script>
         <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
-    </head>
-    <body>
 
-        <span style="width: 500px" id="eventsDiv"></span>
+        <style>
+            .scoreChange {
+                background-color: green;
+            }
+
+            .matchChange {
+                background-color: blue;
+            }
+            .eventList {
+                color: white;
+                font-family: Tahoma, Geneva, sans-serif;
+            }
+
+            .winner {
+                font-weight: bold;
+            }
+        </style>
+    </head>
+    <body style="background-color: black;">
+
+        <span class="eventList" style="background-color: black; width: 1200px" id="eventsDiv"></span>
         <script>
 
             var pinEvents = [];
@@ -51,21 +69,50 @@
                     return;
                 }
 
-               // console.log("drawing an event...");
-
-                var theSpan = document.createElement("div");
-                theSpan.style.display = "none";
-                theSpan.id = "eventSpan" + pinEventsIndex;
-                var theEventText = "";
+                // console.log("drawing an event...");
                 var aEvent = pinEvents[pinEventsIndex];
-                theEventText += aEvent.player1_name + " (" + aEvent.player1Score +  "-" + aEvent.player2Score + ") " + aEvent.player2_name;
-                var theText = document.createTextNode(theEventText);
-                theSpan.appendChild(theText);
+                var divClass = "";
+
+                var theSpan = "<div style='display: none' id='eventSpan" + pinEventsIndex + "'>";
+                // theSpan.style.display = "none";
+                // theSpan.id = "eventSpan" + pinEventsIndex;
+                // var theEventText = "";
+
+                // do the round
+                theSpan += "<span class='round'>R" + aEvent.round + ". - </span>";
+                
+                theSpan += aEvent.player1_name + " (";
+                
+                if (aEvent.type == "scoreChange" && aEvent.player1ScoreChanged) {
+                    theSpan += "<span class='winner'>" + aEvent.player1Score +  "</span>";
+                }
+                else {
+                    theSpan += aEvent.player1Score;
+                }
+                
+                theSpan += "-";
+                //theEventText += ") " + aEvent.player2_name;
+
+                if (aEvent.type == "scoreChange" && aEvent.player2ScoreChanged) {
+                    theSpan += "<span class='winner'>" + aEvent.player2Score +  "</span>";
+                }
+                else {
+                    theSpan += aEvent.player2Score;
+                }
+
+                theSpan += ") " + aEvent.player2_name;
+
+                //var theText = document.createTextNode(theEventText);
+                console.log(theSpan);
+               // $("#" + theSpan.id).html(theEventText);
                 $("#queueIndex").html(pinEventsIndex);
                 $("#eventsDiv").prepend(theSpan);
 
+                console.log(aEvent.type);
+                $("#eventSpan" + pinEventsIndex).addClass(aEvent.type);
+
                 var options = { direction: "up"};
-                $("#" + theSpan.id).show("drop", options);
+                $("#eventSpan" + pinEventsIndex).show("drop", options);
 
                 // event queue not full...
                 if (eventsBeingDisplayed < displayEventsSize) {

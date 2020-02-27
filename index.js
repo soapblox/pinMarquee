@@ -51,12 +51,12 @@ io.on('connection', function (socket) {
 
 
     socket.on('panelToPlayerUpdate', function (msg) {
-        console.log('Index.js-paint');
+        console.log("panelToPlayerUpdate");
+        console.log(msg);
         io.emit('playerStateUpdate', msg);
     });    
 
     socket.on('panelToActiveGameUpdate', function (msg) {
-        console.log('Index.js-paint');
         io.emit('activeGameStateUpdate', msg);
     });
 

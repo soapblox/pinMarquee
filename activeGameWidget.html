@@ -30,11 +30,11 @@
 
                 var aMatch = fetchNextActiveMatch();
 
-                theString += "** " + aMatch.player1.name + " (" + aMatch.player1Score + "-" + aMatch.player2Score + ") " + aMatch.player2.name + " ** ";
+                theString += "** R" + aMatch.round + ". " + aMatch.player1.name + " (" + aMatch.player1Score + "-" + aMatch.player2Score + ") " + aMatch.player2.name + " ** ";
 
                 aMatch = fetchNextActiveMatch();
 
-                theString += "** " + aMatch.player1.name + " (" + aMatch.player1Score + "-" + aMatch.player2Score + ") " + aMatch.player2.name + " ** ";
+                theString += "** R" + aMatch.round + ". " + aMatch.player1.name + " (" + aMatch.player1Score + "-" + aMatch.player2Score + ") " + aMatch.player2.name + " ** ";
 
                 theString += "</span>"
                 fadeExistingAndLoadNew(theString);
