@@ -227,7 +227,7 @@
             function fadeExistingAndLoadNew(newStuff) {
 
                 animateCSS("#currentPlayerDiv", 'fadeOutDown', function() {
-                    console.log("fade out ended... fade in!");
+                    //console.log("fade out ended... fade in!");
                     $("#currentPlayerDiv").html(newStuff);
                     animateCSS("#currentPlayerDiv", 'fadeInDown');
                 });
