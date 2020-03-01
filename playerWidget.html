@@ -11,12 +11,26 @@
         <style>
             .currentPlayer {
                 background-color: black;
-                color: white;
-                font-family: Tahoma, Geneva, sans-serif;
+                color: #BCBEC0;
+                font-family: Calibri;
+            }
+
+            .currentTournament {
+                background-color: black;
+                color: #E2CF20;
+                font-family: Calibri;
+                border-right: 1px solid #BCBEC0;
+                padding: 5px;
             }
         </style>
 
-        <span style="width: 1200px; background-color: black;" id="currentPlayerDiv"></span>
+        <span style="width: 1200px; background-color: black;" id="currentPlayerWidget">
+            <table>
+                <tr>
+                    <td class="currentTournament" style="height: 50px"><span id="currentTournament"></span></td>
+                    <td id="currentPlayerDiv" class="currentPlayerDiv"></td>
+                </tr>
+        </span>
         <script>
 
             var pinMarquee = new PinMarquee();
@@ -82,24 +96,24 @@
 
                     if (amPlayerOne) {
                         if (playerTwoDefined) {
-                            theString += " R" + aMatch.round + ". (" +  aMatch.player1Score + "-" + aMatch.player2Score + ")";
+                            theString += " r" + aMatch.round + ". (" +  aMatch.player1Score + "-" + aMatch.player2Score + ")";
                         }
                         else {
-                            theString += " R" + aMatch.round + ". (waiting for opponent)";
+                            theString += " r" + aMatch.round + ". (waiting for opponent)";
                         }
                     }
                     else if (amPlayerTwo) {
                         if (playerOneDefined) {
-                            theString += " R" + aMatch.round + ". (" +  aMatch.player2Score + "-" + aMatch.player1Score + ")";
+                            theString += " r" + aMatch.round + ". (" +  aMatch.player2Score + "-" + aMatch.player1Score + ")";
                         }
                         else {
-                            theString += " R" + aMatch.round + ". (waiting for opponent)";
+                            theString += " r" + aMatch.round + ". (waiting for opponent)";
                         }
                     }
                 });
 
                 if (!hasRound1) {
-                    theString = " R1. (bye) " + theString;
+                    theString = " r1. (bye) " + theString;
                 }
 
                 return theString;
@@ -107,17 +121,21 @@
 
             function drawCurrentPlayer() {
                 var playersToUse;
-                var currentPlayer = "<span class='currentPlayer'>";
+                var currentPlayer = "<div class='currentPlayer'>";
 
                 var currentTourney = pinMarquee.tournaments[currentTournamentIndex];
+                $("#currentTournament").html(pinMarquee.tournaments[currentTournamentIndex].name);
 
                 //currentPlayer += pinMarquee.players[playersIndex].name;
+                currentPlayer += "<div class='currentPlayerName'>";
                 currentPlayer += currentTourney.players[currentPlayerIndex].name;
+                currentPlayer += "</div>";
                 var currentPlayerId = currentTourney.players[currentPlayerIndex].id;
 
                 //console.log(currentPlayer);
-
+                currentPlayer += "<div class='currentPlayerMatches'>";
                 currentPlayer += makePlayerMatchesString(currentTourney.getMatchesByPlayerId(currentPlayerId), currentPlayerId);
+                currentPlayer += "</div>";
 
                 // $("#currentPlayerDiv").html(currentPlayer + matchString);
                 currentPlayerIndex++;
@@ -176,6 +194,7 @@
 
                             // set it in the SOR
                             pinMarquee.tournaments[i].players = aPlayers;
+                            pinMarquee.tournaments[i].name = tempMarquee.tournaments[i].name;
                         }
                         //pinMarquee.tournaments[i].players = tempMarquee.tournaments[i].players;
 

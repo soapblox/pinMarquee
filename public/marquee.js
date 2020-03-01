@@ -31,6 +31,7 @@ class Player {
     constructor(id, name) {
         this.name = name;
         this.id = id;
+        this.seed = "";
     }
 }
 
@@ -128,7 +129,9 @@ class Tournament {
                         pinEvent.player2_name = theMatches[i].player2.name;
                         pinEvent.player1Score = theMatches[i].player1Score;
                         pinEvent.player2Score = theMatches[i].player2Score;
+                        pinEvent.player1Wins = pinEvent.player1Score > pinEvent.player2Score;
                         pinEvent.round = theMatches[i].round;
+                        pinEvent.tournamentName = this.name;
                         pinEvent.type = "matchChange";
                         console.log(pinEvent);
                         deltaEvents.push(pinEvent);
@@ -187,6 +190,8 @@ class Tournament {
                         // indicate if player2 Score has changed in this update..
                         pinEvent.player2Score = theMatches[i].player2Score;
                         pinEvent.player2_name = theMatches[i].player2.name;
+
+                        pinEvent.tournamentName = this.name;
 
                         // same state, it's just a score change...
                         pinEvent.type = "scoreChange";
@@ -255,7 +260,8 @@ class Tournament {
                 
                 aPlayer.id = data[i].participant.id;
                 aPlayer.name = data[i].participant.display_name;
-                //players.push(aPlayer);
+                aPlayer.seed = data[i].participant.seed;
+                console.log(aPlayer.seed);
                 this.players.push(aPlayer);
             }
 
@@ -288,6 +294,7 @@ class Tournament {
                 
                 aPlayer.id = data[i].participant.id;
                 aPlayer.name = data[i].participant.display_name;
+                aPlayer.seed = data[i].participant.seed;
                 //players.push(aPlayer);
                 this.players.push(aPlayer);
             }
