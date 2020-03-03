@@ -59,7 +59,7 @@ class Tournament {
 
     getMatchesByPlayerId(pId) {
         var playerMatches = [];
-        console.log(pId + " " + this.matches.length);
+        //console.log(pId + " " + this.matches.length);
         for (var i = 0; i < this.matches.length; i++) {
  
             // if no players are defined, ignore
@@ -76,10 +76,22 @@ class Tournament {
             }
         }
 
-        console.log(pId + " " + this.matches.length);
+        //console.log(pId + " " + this.matches.length);
 
         return playerMatches;
-    }    
+    }
+
+    getActiveMatches() {
+        var activeMatches = [];
+
+        this.matches.forEach(function(aMatch) {
+            if (aMatch.state == "open") {
+                activeMatches.push(aMatch);
+            }
+        });
+
+        return activeMatches;
+    }
 
     getPlayerById(pId) {
         // match doesn't know what player it is yet, so ignore...
@@ -121,6 +133,7 @@ class Tournament {
                     theMatches[i].player1Score = challongeData[i].player1Score;
                     theMatches[i].player2Score = challongeData[i].player2Score;
                     theMatches[i].matchScore = challongeData[i].matchScore;
+                    theMatches[i].loser_id = challongeData[i].loser_id;
 
                     if (generateEvent) {
                         var pinEvent = {};
@@ -224,6 +237,8 @@ class Tournament {
             else {
                 aMatch.matchScore = data[i].match.scores_csv;
             }
+
+            aMatch.loser_id = data[i].match.loser_id;
             aMatch.round = data[i].match.round;
 
             aMatch.player1Score = aMatch.matchScore.substring(0, 1);

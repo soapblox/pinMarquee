@@ -16,6 +16,7 @@
             .eventList {
                 color: #BCBEC0;
                 font-family: Calibri;
+                font-size: 20px;
             }
 
             .winner {
@@ -28,20 +29,45 @@
             }
 
             .eventSpan {
-                width: 600px;
+                width: 800px;
                 padding: 5px;
             }
 
             .eventTitle {
                 color: #BCBEC0;
                 font-family: Calibri;
+                font-size: 20px;
+                text-align: center;
+            }
+
+            .newUpdate {
+                text-align: center;
+                width: 800px;
+                color: #E2CF20;
+            }
+
+            .text-light {
+                background: linear-gradient(-45deg, #000000, #e2cf20);
+                background-size: 400% 400%;
+                animation: gradient 15s ease infinite;
+            }                    
+
+            @keyframes gradient {
+                0% {
+                    background-position: 0% 50%;
+                }
+                50% {
+                    background-position: 100% 50%;
+                }
+                100% {
+                    background-position: 0% 50%;
+                }
             }
         </style>
     </head>
     <body style="background-color: black;">
-
-        <div class="eventTitle" style="background-color: black; width: 1800px" id="eventTitle">NORTH AMERICAN & WOMEN'S WORLD CHAMPIONSHIP | TYPE <span class="currentTournament">!BRACKET</span> IN CHAT</div>
-        <div class="eventList" style="background-color: black; width: 1800px; display: none" id="eventsDiv"></div>
+        <div class="eventTitle" style="background-color: black; width: 800px" id="eventTitle">NORTH AMERICAN & WOMEN'S WORLD CHAMPIONSHIP | TYPE <span class="currentTournament">!BRACKET</span> IN CHAT</div>
+        <div class="eventList" style="background-color: black; width: 1200px; display: none" id="eventsDiv"></div>
         <script>
 
             var pinEvents = [];
@@ -49,6 +75,7 @@
             var displayEventsSize = 2; 
             var eventsBeingDisplayed = 0;
             var drawingEvents = false;
+            var drawingUpdate = false;
 
             $(function () {
 
@@ -109,16 +136,18 @@
                 
                         var theSpan = "<span class='eventSpan' id='eventSpan" + pinEventsIndex + "'>";
 
-                        if (aEvent.type == "newUpdate") {
-                            theSpan += "<span class='update'>UPDATE</span>";
+                        if (aEvent.type == "newUpdate") {       
+                            //$("#eventTitle").addClass("text-light");
+                            //$("#eventTitle").addClass(".text-light");
+                            theSpan += "<span class='newUpdate animated infinite rubberBand'> Score Update </span>";
+                            drawingUpdate = true;
                         }
                         else {
-
                             // do the round
                             theSpan += "<span class='currentTournament'>" + aEvent.tournamentName + "</span> | <span class='round'>R" + aEvent.round + ". - </span>";
                     
                             if (aEvent.type == "matchChange" && aEvent.player1Wins) {
-                                theSpan += "<span class='winner'>" + aEvent.player1_name + "</span>"; 
+                                theSpan += "<span class='winner'>&#x1f3c6; " + aEvent.player1_name + "</span>"; 
                             }
                             else {
                                 theSpan +=  aEvent.player1_name; 
@@ -145,21 +174,30 @@
                             theSpan += ") ";
 
                             if (aEvent.type == "matchChange" && !aEvent.player1Wins) {
-                                theSpan += "<span class='winner'>" + aEvent.player2_name + "</span>"; 
+                                theSpan += "<span class='winner'>&#x1f3c6; " + aEvent.player2_name + "</span>"; 
                             }
                             else {
                                 theSpan += aEvent.player2_name; 
                             }
                         }
 
-                        theSpan += " | </span>";
+                        theSpan += "</span>";
                         //var theText = document.createTextNode(theEventText);
                         console.log(theSpan);
                         // $("#" + theSpan.id).html(theEventText);
                         //$("#queueIndex").html(pinEventsIndex);
                         $("#eventTitle").html(theSpan);
 
-                        animateCSS("#eventTitle", "fadeInUp");
+                        if (drawingUpdate) {
+                            animateCSS("#eventTitle", "fadeInUp", function() {
+                                animateCSS("#eventTitle", "rubberBand");
+                            });
+                            drawingUpdate = false;
+                        }
+                        else {
+                            animateCSS("#eventTitle", "fadeInUp");
+                        }
+                        
 
                         console.log(aEvent.type);
 
@@ -199,10 +237,10 @@
                 node.addEventListener('animationend', handleAnimationEnd)
             }
 
-            var theTimer = setInterval(drawEvents, 5000);
+            var theTimer = setInterval(drawEvents, 15000);
 
         </script>
-
+        
         <br /> <br />
         <br /> <br />
         <br /> <br />

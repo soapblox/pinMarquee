@@ -9,10 +9,16 @@
     </head>
     <body style="background-color: black;">
         <style>
+
+            body {
+                font-size: 20px;
+            }
+
             .currentPlayer {
                 background-color: black;
                 color: #BCBEC0;
                 font-family: Calibri;
+                font-size: 20px;
             }
 
             .currentTournament {
@@ -21,13 +27,22 @@
                 font-family: Calibri;
                 border-right: 1px solid #BCBEC0;
                 padding: 5px;
+                font-size: 20px;
+            }
+
+            .loser {
+                color: #F05323;
+            }
+
+            .currentPlayerDiv {
+                padding-left: 10px;
             }
         </style>
 
         <span style="width: 1200px; background-color: black;" id="currentPlayerWidget">
             <table>
                 <tr>
-                    <td class="currentTournament" style="height: 50px"><span id="currentTournament"></span></td>
+                    <td class="currentTournament" style="height: 50px; width: 70px"><span id="currentTournament"></span></td>
                     <td id="currentPlayerDiv" class="currentPlayerDiv"></td>
                 </tr>
         </span>
@@ -44,12 +59,12 @@
             function makePlayerMatchesString(playerMatches, currentPlayerId) {
                 var theString = ""
                 var hasRound1 = false;
-                console.log(playerMatches.length);
+                //console.log(playerMatches.length);
                 playerMatches.forEach(function(aMatch, index) {
                     // for Player List, we always want the CURRENT Player score displayed on the LEFT
                     // so if the CURRENT Player is actually player 2, we swap the score string...
 
-                    console.log(aMatch);
+                    //console.log(aMatch);
                     
                     var amPlayerOne = false;
                     var playerOneDefined = false;
@@ -64,13 +79,13 @@
 
                     // player isn't player 1
                     if (typeof aMatch.player1 === "undefined") {
-                        console.log("i am not player 1");
+                       // console.log("i am not player 1");
                     }
                     else {
                         playerOneDefined = true;
 
                         if (aMatch.player1.id == currentPlayerId) {
-                            console.log("i am player 1");
+                            // console.log("i am player 1");
                             amPlayerOne = true;
 
                             if (aMatch.round == "1") {
@@ -80,12 +95,12 @@
                     }
                     
                     if (typeof aMatch.player2 === "undefined") {
-                        console.log("I am not Player 2")
+                        //console.log("I am not Player 2")
                     }
                     else {
                         playerTwoDefined = true;
                         if (aMatch.player2.id == currentPlayerId) {
-                            console.log("i am player 2");
+                           // console.log("i am player 2");
                             amPlayerTwo = true;
 
                             if (aMatch.round == "1") {
@@ -94,27 +109,43 @@
                         }
                     }
 
+                    //console.log("LOSER ID: " + aMatch.loser_id);
+
                     if (amPlayerOne) {
                         if (playerTwoDefined) {
-                            theString += " r" + aMatch.round + ". (" +  aMatch.player1Score + "-" + aMatch.player2Score + ")";
+                            if (aMatch.loser_id == aMatch.player1.id) {
+                                theString += "| <span class='loser'>" +  aMatch.player1Score + "-" + aMatch.player2Score + "</span> ";
+                            }
+                            else {
+                                theString += "| " +  aMatch.player1Score + "-" + aMatch.player2Score + " ";
+                            }
+                            
                         }
                         else {
-                            theString += " r" + aMatch.round + ". (waiting for opponent)";
+                            theString += "| ... ";
                         }
                     }
                     else if (amPlayerTwo) {
                         if (playerOneDefined) {
-                            theString += " r" + aMatch.round + ". (" +  aMatch.player2Score + "-" + aMatch.player1Score + ")";
+
+                            if (aMatch.loser_id == aMatch.player2.id) {
+                                theString += "| <span class='loser'>" +  aMatch.player2Score + "-" + aMatch.player1Score + "</span> ";
+                            }
+                            else {
+                                theString += "| " +  aMatch.player2Score + "-" + aMatch.player1Score + " ";
+                            }
                         }
                         else {
-                            theString += " r" + aMatch.round + ". (waiting for opponent)";
+                            theString += "| ... ";
                         }
                     }
                 });
 
                 if (!hasRound1) {
-                    theString = " r1. (bye) " + theString;
+                    theString = "| bye " + theString;
                 }
+
+                theString += "|";
 
                 return theString;
             }
@@ -128,7 +159,7 @@
 
                 //currentPlayer += pinMarquee.players[playersIndex].name;
                 currentPlayer += "<div class='currentPlayerName'>";
-                currentPlayer += currentTourney.players[currentPlayerIndex].name;
+                currentPlayer += currentTourney.players[currentPlayerIndex].seed + " - " + currentTourney.players[currentPlayerIndex].name;
                 currentPlayer += "</div>";
                 var currentPlayerId = currentTourney.players[currentPlayerIndex].id;
 
@@ -189,6 +220,7 @@
                             var aPlayers = [];
                             for (var j = 0; j < tempMarquee.tournaments[i].players.length; j++) {
                                 var aPlayer = new Player(tempMarquee.tournaments[i].players[j].id, tempMarquee.tournaments[i].players[j].name);
+                                aPlayer.seed = tempMarquee.tournaments[i].players[j].seed;
                                 aPlayers.push(aPlayer);
                             }
 

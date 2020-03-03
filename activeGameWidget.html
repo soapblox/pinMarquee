@@ -10,26 +10,29 @@
                 background-color: black;
                 color: #BCBEC0;
                 font-family: Calibri;
-                
+                padding-left: 10px;
+                font-size: 20px;
             }
 
             .currentPlayer {
                 background-color: black;
                 color: #BCBEC0;
                 font-family: Calibri;
+                font-size: 20px;
             }            
 
             .currentTournament {
                 background-color: black;
                 color: #E2CF20;
                 font-family: Calibri;
+                font-size: 20px;
                 border-right: 1px solid #BCBEC0;
                 padding: 5px;
                 
             }
 
             .activeGamesWidgetDiv {
-                width: 1200px
+                width: 1200px;
             }
         </style>
     </head>
@@ -38,7 +41,7 @@
         <div id="activeGamesWidgetDiv" class="activeGamesWidgetDiv">
             <table>
                 <tr>
-                    <td class="currentTournament"><span id="currentTournament"></span><br /><span class="currentPlayer">ACTIVE</span></td>
+                    <td class="currentTournament" style="height: 50px; width: 70px"><span id="currentTournament"></span><br /><span class="currentPlayer">ACTIVE</span></td>
                     <td id="activeGamesDiv"></td>
                 </tr>
             </table>
@@ -56,57 +59,119 @@
 
             var started = false;
 
-            function drawCurrentActiveGameFromQueue() {
-                $("#currentTournament").html(pinMarquee.tournaments[currentTournamentIndex].name);
-                var theString = "<div class='activeGame'>";
+            function fetchTwo() {
+                var twoMatches = [];
 
-                var aMatch = fetchNextActiveMatch();
+                console.log("in fetchTwo()");
 
-                if (aMatch == null) {
-                    console.log('got to end of tournament... etch next?');
-                    aMatch = fetchNextActiveMatch();
-                    // update tournament name..
-                    $("#currentTournament").html(pinMarquee.tournaments[currentTournamentIndex].name);
+                // if our index is already at the end of the currentTournament...
+                if (atTheEndOfCurrentTournament() == null) {
+                    console.log("already at the end... switch Tournaments...");
+                    changeTournaments();
                 }
                 
-                console.log(aMatch);
+                var aMatch = fetchNextMatch(true);
 
-                theString += "r" + aMatch.round + ". " + aMatch.player1.name + " (" + aMatch.player1Score + "-" + aMatch.player2Score + ") " + aMatch.player2.name;
-
-                theString += "<br />";
-
-                console.log("has tournament changed?: " + tournamentChanged);
-                
-                //theString += "<div class='activeGame'>";
-                // if the tournament hasn't changed, get the second match...
-                if (tournamentChanged) {
-                    console.log("torunament changed, don't fetch another...");
-                    tournamentChanged = false;
-                }
-                else {
-                    console.log("same tournament... get the next...");
-                    aMatch = fetchNextActiveMatch();
-                    console.log(aMatch);
-                    if (tournamentChanged) {
-                        console.log("there wasn't a nother match for this toruney");
-                        tournamentChanged = false;
+                // we got something back, meaning we have a match
+                if (aMatch != null) {
+                    console.log("found one match for currentTournament...");
+                    twoMatches.push(aMatch);
+                    if (atTheEndOfCurrentTournament() == null) {
+                        console.log("we have the last match in this tournament....");
+                        // send back the one we have...
+                        return twoMatches;
                     }
                     else {
-                        theString += "r" + aMatch.round + ". " + aMatch.player1.name + " (" + aMatch.player1Score + "-" + aMatch.player2Score + ") " + aMatch.player2.name;
+                        // fetch the next
+                        aMatch = fetchNextMatch(true);
 
-                        theString += "</div>"
-                    }
+                        // we got something back..
+                        if (aMatch != null) {
+                            // so draw it..
+                            console.log("got a second match...");
+                            twoMatches.push(aMatch);
+                            return twoMatches;
+                        }
+                    } 
                 }
+            }
+
+            function drawActive() {
+                var theString = "<div class='activeGame'>";
+
+                var matches = fetchTwo();
+
+                if (typeof matches === 'undefined') {
+                    console.log("NO ACTIVE MATCHES FOR TOURNAMNET" + currentTournamentIndex);
+                    $("#currentTournament").html(pinMarquee.tournaments[currentTournamentIndex].name);
+                    theString += "No Active Matches";
+                }
+                else {
+
+                    matches.forEach(function(aMatch, theIndex) {
+                        $("#currentTournament").html(aMatch.tournamentName);
+                        if (theIndex == 1) {
+                            theString += "<br >";
+                        }
+                        theString += "r" + aMatch.round + ". " + aMatch.player1.name + " (" + aMatch.player1Score + "-" + aMatch.player2Score + ") " + aMatch.player2.name;
+                    });
+                }
+
+                theString += "</div>";
 
                 fadeExistingAndLoadNew(theString);
             }
 
-            function fetchNextActiveMatch() {
-                var origIndex = currentTournamentIndex;
+            function atTheEndOfCurrentTournament() {
+                // this means there are NO MORE active matches...
+                //console.log("in at End of tournament");
+
+                var temp = fetchNextMatch(false);
+                //console.log("End of tournament - after a scan: ", temp);
+
+                return temp;
+            }
+
+            function changeTournaments() {
+                //console.log("changing tournaments..");
+                // reset the index...
+                activeGameQueueIndex = 0;
+                    
+                // increment the tournament...
+                currentTournamentIndex++;
+
+                // finished all tournaments, go back to beginning...
+                if (currentTournamentIndex == pinMarquee.tournaments.length) {
+                    currentTournamentIndex = 0;
+                }
+            }
+
+            function fetchNextMatch(incrementIndex) {
                 var found = false;
-                var aMatch;
+                var aMatch = null;
+
+                var indexToStartFrom = 0;
+
+                if (incrementIndex) {
+                    //console.log("we fetching...");
+                }
+                else {
+                    //console.log("we're scanning for any active matches left...");
+
+                    if (activeGameQueueIndex == pinMarquee.tournaments[currentTournamentIndex].matches.length) {
+                        //console.log("activeGameQueue at end...");
+                        return null;
+                    }
+                }
+
+                var indexToStartFrom = activeGameQueueIndex;
+
+                // console.log("fetchNextMatch, queIndex: " + activeGameQueueIndex + ", tournament: " + currentTournamentIndex + ", increment: " + incrementIndex);
                 while (!found) {
-                    aMatch = pinMarquee.tournaments[currentTournamentIndex].matches[activeGameQueueIndex];
+                    aMatch = pinMarquee.tournaments[currentTournamentIndex].matches[indexToStartFrom];
+                    aMatch.tournamentName = pinMarquee.tournaments[currentTournamentIndex].name;
+
+                    // if current Match is open, we found it!
                     if (aMatch.state == "open") {
                         //console.log('active game found' + aMatch.id);
                         found = true;
@@ -115,32 +180,22 @@
                         //console.log("matchIndex " + activeGameQueueIndex + " is not open");
                     }
 
-                    // finished with current tournament, switch to next...
-                    activeGameQueueIndex++;
-                    if (activeGameQueueIndex == pinMarquee.tournaments[currentTournamentIndex].matches.length) {
-                        console.log("reached end of matches...");
-                        activeGameQueueIndex = 0;
-                        currentTournamentIndex++;
+                    // Fetching, so we move the index...
+                    if (incrementIndex) {
+                        //console.log("incrementing actual index...");
+                        activeGameQueueIndex++;
+                    }
 
-                        // finished all tournaments, go back to beginning...
-                        if (currentTournamentIndex == pinMarquee.tournaments.length) {
-                            currentTournamentIndex = 0;
-                        }
+                    // ALWAYS use the SCANNING index...
+                    indexToStartFrom++;
 
-                        // this is last match in list, but it's not open, so we don't have anything to return...
-                        if (aMatch.state != "open") {
-                            aMatch = null;
-                        }
-
-                        if (origIndex == currentTournamentIndex) {
-                            console.log("only 1 tournament!");
-                        }
-                        else {
-                            // tournmanet changed, exit out of loop...
-                            tournamentChanged = true;
-                            found = true;
-                        }
-                        
+                    // check if we've reached the end of matches... without finding anything...
+                    if (!found && indexToStartFrom == pinMarquee.tournaments[currentTournamentIndex].matches.length) {
+                        // we've reached the end, so kill the loop
+                        //console.log("nothing found, and finished with the loop");
+                        // set aMatch to null...
+                        aMatch = null;
+                        break;
                     }
                 }
 
@@ -172,7 +227,7 @@
 
                     if (!started) {
                         started = true;
-                        playerTimer = new interval(4000, drawCurrentActiveGameFromQueue);
+                        playerTimer = new interval(4000, drawActive);
                         playerTimer.run();
                         //drawCurrentActiveGameFromQueue();
                     }
@@ -187,21 +242,6 @@
                     $("#activeGamesDiv").html(newStuff);
                     animateCSS("#activeGamesDiv", 'fadeInDown');
                 });
-                // $("#activeGamesDiv").effect("drop", options, 400);
-                //setTimeout(drawNew, 500, newStuff);
-                
-            }
-
-            function drawNew(newStuff) {
-                //console.log("in drawNew");
-                //$("#activeGamesDiv").hide();
-                
-                
-
-                
-
-
-                //$("#activeGamesDiv").classList(("drop", options);
             }
 
             function animateCSS(element, animationName, callback) {
@@ -218,7 +258,6 @@
                 node.addEventListener('animationend', handleAnimationEnd)
             }
 
-
         </script>
 
 
@@ -226,17 +265,5 @@
 <br />
 <br />
 <br />
-
-    <!--        <div id="activeGamesWidgetDiv" class="activeGamesWidgetDiv">
-                <table>
-                    <tr>
-                        <td class="currentTournament" id="currentTournament">NACS</td>
-                          <td id="">                    
-                            <div class="activeGame">r1. 13 - Kassidy Milanowski (3 - 3) 20 - Rachel Karlic</div>
-                            <div class="activeGame">r2. 1 - Louise Wagensonner (0-0) 16 - Emily May</div> 
-                        </td>
-                    </tr>
-                </table>
-            </div> -->
     </body>
 </html>
