@@ -25,3 +25,16 @@ Run "node ."
 Default port is 3000.
 
 Go to http://localhost:3000/panel
+
+Find widgets at:
+
+http://localhost:3000/activeGameWidget
+
+http://localhost:3000/eventWidget
+
+http://localhost:3000/playerWidget
+
+These will show in the panel UI.
+
+Link those URLs above in OBS
+
