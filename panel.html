@@ -20,7 +20,7 @@
         var numOfMatches = 0;
 
         var myTimer;
-        var playerMarqueeTimer;
+        var pinMarqueeTimer;
 
         var timerInterval = 0;
 
@@ -53,6 +53,11 @@
                 // add the tourn
                 pinMarquee.tournaments.push(nationals);
                 pinMarquee.tournaments.push(womens);
+
+                // start the timer...
+                console.log("starting timer at interval:" + timerInterval);
+                pinMarqueeTimer  = new interval(timerInterval, fetchMatches);
+                pinMarqueeTimer.run();
             });
 
             $("#getPlayers").on("click", function() {
@@ -230,7 +235,7 @@
 <body>
     <h2>Challonge Admin Panel</h2>
     <p style="border: 1px solid black; padding: 5px">lrdeyl1i c80iwk0p
-        Nationals: <input type="text" id="tournamentId" value="k50wpxpo" size="10" /> Tournament Name: <input type="text" id="tournamentName" value="NACS" /> <br />
+        Nationals: <input type="text" id="tournamentId" value="nacssv" size="10" /> Tournament Name: <input type="text" id="tournamentName" value="NACS" /> <br />
         Womens: <input type="text" id="womensId" value="1fvxqcqw" size="10" /> Tournament Name: <input type="text" id="womensName" value="WWC" /><br />
         API Key: <input type="text" id="apiKey" value="FamWkhEPZ2bM6QCRVRZXZoIWatyEmRvepJf3odHx" size="50" /> <br />
         Challonge Update Interval: <input type="text" id="pollingSecs" value="60" size="4"/> seconds <br />

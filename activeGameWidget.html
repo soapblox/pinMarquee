@@ -62,11 +62,11 @@
             function fetchTwo() {
                 var twoMatches = [];
 
-                console.log("in fetchTwo()");
+                //console.log("in fetchTwo()");
 
                 // if our index is already at the end of the currentTournament...
                 if (atTheEndOfCurrentTournament() == null) {
-                    console.log("already at the end... switch Tournaments...");
+                    //console.log("already at the end... switch Tournaments...");
                     changeTournaments();
                 }
                 
@@ -74,7 +74,7 @@
 
                 // we got something back, meaning we have a match
                 if (aMatch != null) {
-                    console.log("found one match for currentTournament...");
+                    //console.log("found one match for currentTournament...");
                     twoMatches.push(aMatch);
                     if (atTheEndOfCurrentTournament() == null) {
                         console.log("we have the last match in this tournament....");
@@ -88,7 +88,7 @@
                         // we got something back..
                         if (aMatch != null) {
                             // so draw it..
-                            console.log("got a second match...");
+                            //console.log("got a second match...");
                             twoMatches.push(aMatch);
                             return twoMatches;
                         }
@@ -227,7 +227,7 @@
 
                     if (!started) {
                         started = true;
-                        playerTimer = new interval(4000, drawActive);
+                        playerTimer = new interval(10000, drawActive);
                         playerTimer.run();
                         //drawCurrentActiveGameFromQueue();
                     }
